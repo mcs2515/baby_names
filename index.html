@@ -1,30 +1,41 @@
 <!doctype html>
 <html lang='en'>
-  <head>
-    <title>Baby Names</title>
-    <meta charset="utf-8">
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <link rel="stylesheet" href="main.css">
-  </head>
 
-  <body>
-    <main>
-      <section>
-    <h1>Popular Baby Names Over Time</h1>
+<head>
+	<title>Baby Names</title>
+	<meta charset="utf-8">
+	<script src="https://d3js.org/d3.v5.min.js"></script>
+	<link rel="stylesheet" href="css/main.css">
+	<!--		autocomplete library-->
+	<link type="text/css" rel="stylesheet" href="autocomplete/autocomplete.css" />
+	
+</head>
 
-    <div class='chart-div'>
-      <label>Filter by:</label>
-      <select id='filter'>
-        <option></option>
-        <option></option>
-        <option></option>
-      </select>
-      <svg id='chart'></svg>
-    </div>
-  
-    
-    </section>
-    </main>
-    <script src='./main.js'></script>
-  </body>
+<body>
+	<main>
+		<section>
+			<h1>Popular Baby Names Over Time</h1>
+
+			<div class='chart-div'>
+				<form>
+					Enter Name:<br>
+					<input type="text" name="firstname" id='nameField'>
+				</form>
+				<select id='filter'>
+					<label>Filter by:</label>
+					<option></option>
+					<option></option>
+					<option></option>
+				</select>
+				<svg id='chart'></svg>
+			</div>
+
+
+		</section>
+	</main>
+	<script src='js/main.js'></script>
+	<script src="autocomplete/jquery.js"></script>
+	<script src="autocomplete/autocomplete.js"></script>
+</body>
+
 </html>

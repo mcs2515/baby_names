@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css?family=Quicksand');
+@import url('https://fonts.googleapis.com/css?family=Comfortaa');
+
+body,
+html {
+	width: 100%;
+	height: 100%;
+	margin: 0 auto;
+}
+
+body {
+	background: #fcfcfc;
+}
+
+p {}
+
+button:focus {
+	outline: 0;
+}
+
+#background {
+	z-index: -1;
+	position: absolute;
+	width: 100%;
+	height: 400px;
+	background: linear-gradient(#d19c7d, #f9cf92);
+}
+
+.graph {
+	position: relative;
+	padding-top: 5em;
+	text-align: center;
+	transition: all .3s ease-out;
+}
+
+h1 {
+	text-align: left;
+	margin: 0 auto;
+	padding: 0px 10px;
+	font-weight: normal;
+}
+
+h2 {
+	margin: 0 auto;
+	width: 700px;
+	height: 30px;
+	padding: 0px 15px;
+	padding-top: 25px;
+	background: white;
+	box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.1);
+	font-family: 'Quicksand', sans-serif;
+	font-weight: 100;
+	border: 1px solid #e9e7f1;
+	border-bottom: 0;
+	color: #737373;
+}
+
+svg {
+	font-family: 'Quicksand', sans-serif;
+	font-weight: 100;
+	background-color: white;
+	padding: 10px 20px 20px 10px;
+	margin: 0;
+	box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.15);
+	border: 1px solid #e9e7f1;
+	border-top: 0;
+}
+
+.y-grid line {
+	stroke: lightgrey;
+	stroke-opacity: 0.7;
+	shape-rendering: crispEdges;
+}
+
+.y-grid path {
+	stroke-width: 0;
+}
+
+#tooltip {
+	position: absolute;
+	text-align: center;
+	background: black;
+	color: white;
+	border-radius: 3px;
+	padding: 10px 5px;
+	pointer-events: none;
+	font-family: 'Quicksand', sans-serif;
+	letter-spacing: 1px;
+	font-size: 10pt;
+}

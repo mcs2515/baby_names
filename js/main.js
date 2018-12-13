@@ -13,7 +13,6 @@ let xAxis, yAxis;
 let xAxisGroup, yAxisGroup;
 
 let chart;
-let dataset;
 let filterdata;
 let w, h;
 let leftMargin, rightMargin, bottomMargin;
@@ -31,19 +30,18 @@ window.onload = function () {
 	d3.csv('../dataset/StateNames.csv', rowConverter)
 		.then((d) => {
 
-			dataset = d;
 			//console.log(dataset);
-			autocomplete(dataset);
+			autocomplete(d);
 			btnFunction();
-			makeChart(dataset);
+			makeChart(d);
 
 			search.addEventListener('click', function () {
 
 				let value = document.querySelector('#nameField').value
 				value = value.charAt(0).toUpperCase() + value.slice(1); //titlecase
 				createBtns(value);
-				
-				let subset = getNamesDataset();
+
+				let subset = getNamesDataset(d);
 				filterdata = filterByYear(subset);
 				updateChart(filterdata);
 			})
@@ -61,7 +59,7 @@ function makeChart(dataset) {
 	bottomMargin = 50;
 
 	color = d3.scaleOrdinal(d3.schemeCategory10);
-	
+
 	tooltip = d3.select("body").append("div")
 		.attr('id', 'tooltip').style("opacity", 0);
 
@@ -118,38 +116,38 @@ function updateChart(dataset) {
 
 	console.log(dataset);
 
-	var coordinates = [];
+	//var coordinates = [];
 	let max = 0;
 	let min = 0;
-	
-	for(var i = 0; i < dataset.length; i++){
+
+	for (var i = 0; i < dataset.length; i++) {
 		let values = d3.extent(dataset[i].info, d => d.count);
-		
-		if(values[0] < min){
+
+		if (values[0] < min) {
 			min = values[0];
 		}
-		if(values[1] > max){
+		if (values[1] > max) {
 			max = values[1];
 		}
-		
 
-		for(var k = 0; k<dataset[i].info.length; k++){
-			let data = {
-				year: dataset[i].info[k].year,
-				count: dataset[i].info[k].count
-			};
-			
-			coordinates.push(data);
-		}
+
+		//		for(var k = 0; k<dataset[i].info.length; k++){
+		//			let data = {
+		//				year: dataset[i].info[k].year,
+		//				count: dataset[i].info[k].count
+		//			};
+		//			
+		//			coordinates.push(data);
+		//		}
 	}
-	
+
 	let lines = chart.selectAll('.line').data(dataset);
-	let points = chart.selectAll('.circle').data(coordinates);
+	let points = chart.selectAll('.circle').data(dataset);
 	let y_grid = chart.selectAll('.y-grid').data(dataset);
-	
-	
-	
-	
+
+
+
+
 	//console.log(`${min},${max}`);
 	yScale.domain([min, max]);
 
@@ -199,18 +197,20 @@ function updateChart(dataset) {
 		.style('opacity', 0)
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
-		.style('stroke', (d,i) => {return color(i);})
+		.style('stroke', (d, i) => {
+			return color(i);
+		})
 		.transition("history")
 		.duration(1000)
 		.style('opacity', 1)
 		.attr('d', d => line(d.info));
-	
+
 	//updates old lines
 	lines
 		.transition("history")
 		.duration(1000)
 		.attr('d', d => line(d.info));
-	
+
 	//remove lines
 	lines
 		.exit()
@@ -224,13 +224,15 @@ function updateChart(dataset) {
 		.append('circle')
 		.attr('class', 'circle')
 		.attr('r', 6)
-		.style('fill', (d,i) => {return color(i);})
+		.style('fill', (d, i) => {
+			return color(i);
+		})
 		.style('opacity', 0)
 		.merge(points)
 		.transition("history")
 		.duration(1000)
-		.attr('cx', d => xScale(d.year))
-		.attr('cy', d => yScale(d.count))
+		.attr('cx', d => xScale(d.info[0].year))
+		.attr('cy', d => yScale(d.info[0].count))
 		.style('opacity', 1);
 
 
@@ -256,7 +258,7 @@ function createHorizontalLines() {
 	return d3.axisLeft(yScale);
 }
 
-function getNamesDataset() {
+function getNamesDataset(dataset) {
 	let subset = [];
 
 	for (let k = 0; k < namesArray.length; k++) {
@@ -289,8 +291,8 @@ function getNamesDataset() {
 function filterByYear(dataset) {
 
 	let subset = [];
-	
-	for(let t = 0; t < dataset.length; t++){
+
+	for (let t = 0; t < dataset.length; t++) {
 		let years = d3.map(dataset[t].info, function (d) {
 			return d.year;
 		}).keys();
@@ -301,7 +303,7 @@ function filterByYear(dataset) {
 			info: []
 		}
 
-		for(let i = 0; i < years.length; i++) {
+		for (let i = 0; i < years.length; i++) {
 			let total = 0;
 
 			for (let k = 0; k < dataset[t].info.length; k++) {
@@ -311,7 +313,7 @@ function filterByYear(dataset) {
 					total += dataset[t].info[k].count;
 				}
 			}
-			
+
 			let datum = {
 				year: parseInt(years[i]),
 				count: parseInt(total),
@@ -319,7 +321,7 @@ function filterByYear(dataset) {
 
 			nameobj.info.push(datum);
 		}
-		
+
 		subset.push(nameobj);
 	}
 
@@ -349,15 +351,15 @@ function autocomplete(dataset) {
 	});
 }
 
-function createBtns(value){
-	if(namesArray.length < 5){
-		$('#names').append(`<div id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
+function createBtns(value) {
+	if (namesArray.length < 5) {
+		$('#names').append(`<div class='tags' id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
 		namesArray.push(value);
 		//console.log(namesArray);
 	}
 }
 
-function btnFunction(){
+function btnFunction() {
 	//removes the name from away and its corresponding button
 	$(document).on('click', '.item', function (e) {
 		let name = $(this).parent().prop("id");
@@ -367,8 +369,8 @@ function btnFunction(){
 			namesArray.splice(i, 1);
 		}
 		$(this).parent().remove();
-		
-		
+
+
 		let subset = getNamesDataset();
 		filterdata = filterByYear(subset);
 		updateChart(filterdata);

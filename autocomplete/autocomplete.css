@@ -22,6 +22,7 @@ text-align: start;
 .xdsoft_autocomplete .xdsoft_input{
 	position:relative;
 	z-index:2;
+	min-width: 300px;
 }
 .xdsoft_autocomplete .xdsoft_autocomplete_dropdown{
 	position:absolute;

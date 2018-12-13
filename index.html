@@ -7,33 +7,35 @@
 	<script src="https://d3js.org/d3.v5.min.js"></script>
 	<link rel="stylesheet" href="css/main.css">
 	<link rel="stylesheet" href="autocomplete/autocomplete.css">
-	
-	
+
+
 </head>
 
 <body>
 	<main>
-		<section>
-			<h1>Popular Baby Names Over Time</h1>
+		<h1>Popular Baby Names Over Time</h1>
 
-			<div class='chart-div'>
-				<form class='form'>
-					Enter Name:<br>
+		<div class='chart-div'>
+			<div class='forms'>
+				<form class='form' id='nameform'>
+					<label for="nameField" class='label'>Enter Name:</label>
 					<input type="text" name="firstname" id='nameField' onfocus="if(this.value == value) { this.value = ''; }">
 					<input type="button" id='search' value="Search">
 				</form>
-				<div id="names"></div>
-				<select id='filter'>
-					<label>Filter by:</label>
-					<option></option>
-					<option></option>
-					<option></option>
-				</select>
-				<svg id='chart'></svg>
+
+				<form class='form'>
+					<label for="filter" class='label'>Filter By:</label>
+					<select id='filter'>
+						<option></option>
+						<option></option>
+						<option></option>
+					</select>
+				</form>
 			</div>
+			<div id="names"></div>
+			<svg id='chart'></svg>
+		</div>
 
-
-		</section>
 	</main>
 	<script src="autocomplete/jquery.js"></script>
 	<script src='js/main.js'></script>

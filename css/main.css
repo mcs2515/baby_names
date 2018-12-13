@@ -18,6 +18,27 @@ input:focus {
 	outline: 0;
 }
 
+.chart-div{
+	text-align: center;
+}
+
+.forms{
+	display: flex;
+	margin: 0 auto;
+	max-width: 930px;
+	justify-content: space-between;
+}
+
+.form{
+	display: flex;
+}
+
+.label{
+	line-height: 30px;
+	vertical-align:middle;
+	margin-right: 5px
+}
+
 #background {
 	z-index: -1;
 	position: absolute;
@@ -34,8 +55,9 @@ input:focus {
 }
 
 h1 {
-	text-align: left;
-	margin: 0 auto;
+	text-align: center;
+	margin: 20px auto;
+	margin-bottom: 50px;
 	padding: 0px 10px;
 	font-weight: normal;
 }
@@ -95,12 +117,48 @@ svg {
 	height: 30px;
 	font-family: 'Quicksand', sans-serif;
 	width: 100%;
-	max-width: 200px;
 	margin: 0;
 }
 
 #search {
 	height: 34px;
-	margin-left: -3px;
-	margin-top: -1px;
+}
+
+#search:hover{
+	cursor: pointer;
+}
+
+#filter{
+	width: 120px;
+}
+
+#names{
+	display: flex;
+	align-items: start;
+	max-width: 900px;
+	margin: 20px auto;
+}
+
+.tags{
+	font-family: 'Quicksand', sans-serif;
+	background: gray;
+	padding: 4px 15px 5px 15px;
+	border-radius: 15px;
+	margin-right: 10px;
+	pointer-events: none;
+}
+
+.tags a{
+	text-decoration: none;
+	padding: 2px 7px;
+	font-size: 11pt;
+	font-weight: bold;
+	margin-left: -10px;
+	margin-top: -30px;
+	pointer-events: visible;
+}
+
+.tags a:hover{
+	background: white;
+	border-radius: 20px;
 }

@@ -32,7 +32,7 @@ window.onload = function () {
 
 			//console.log(dataset);
 			autocomplete(d);
-			btnFunction();
+			btnFunction(d);
 			makeChart(d);
 
 			search.addEventListener('click', function () {
@@ -116,7 +116,6 @@ function updateChart(dataset) {
 
 	console.log(dataset);
 
-	//var coordinates = [];
 	let max = 0;
 	let min = 0;
 
@@ -129,28 +128,13 @@ function updateChart(dataset) {
 		if (values[1] > max) {
 			max = values[1];
 		}
-
-
-		//		for(var k = 0; k<dataset[i].info.length; k++){
-		//			let data = {
-		//				year: dataset[i].info[k].year,
-		//				count: dataset[i].info[k].count
-		//			};
-		//			
-		//			coordinates.push(data);
-		//		}
 	}
 
 	let lines = chart.selectAll('.line').data(dataset);
-	let points = chart.selectAll('.circle').data(dataset);
 	let y_grid = chart.selectAll('.y-grid').data(dataset);
-
-
-
 
 	//console.log(`${min},${max}`);
 	yScale.domain([min, max]);
-
 
 	//update y-axis grid line position
 	y_grid
@@ -174,7 +158,7 @@ function updateChart(dataset) {
 
 	y_grid
 		.exit()
-		.transition("grid")
+		.transition("remove")
 		.duration(1000)
 		.style('opacity', 0)
 		.remove();
@@ -189,52 +173,86 @@ function updateChart(dataset) {
 	//draw line
 	lines
 		.enter()
-		.append('path')
-		.attr('class', 'line')
-		.style('stroke', 'red') //d9c8ca
-		.attr("stroke-width", 5)
-		.style('fill', 'none')
-		.style('opacity', 0)
-		.attr("stroke-linejoin", "round")
-		.attr("stroke-linecap", "round")
-		.style('stroke', (d, i) => {
-			return color(i);
-		})
-		.transition("history")
-		.duration(1000)
-		.style('opacity', 1)
-		.attr('d', d => line(d.info));
+			.append('path')
+			.attr('class', 'line')
+			.style('stroke', 'red') //d9c8ca
+			.attr("stroke-width", 5)
+			.style('fill', 'none')
+			.style('opacity', 0)
+			.attr("stroke-linejoin", "round")
+			.attr("stroke-linecap", "round")
+			.style('stroke', (d, i) => {
+				return color(i);
+			})
+			.transition("move")
+			.duration(1000)
+			.style('opacity', 1)
+			.attr('d', d => line(d.info));
 
 	//updates old lines
 	lines
-		.transition("history")
-		.duration(1000)
+		.transition("move")
+		.duration(800)
 		.attr('d', d => line(d.info));
 
 	//remove lines
 	lines
 		.exit()
-		.transition("bars")
+		.transition("remove")
 		.duration(200)
 		.style('opacity', 0)
 		.remove();
+
+
+	//create a group for the points
+	var dots = chart.selectAll(".dots").data(dataset)
+		.enter()
+		.append("g")
+		.attr("class", "dots")
+		.style('fill', (d, i) => {
+			return color(i);
+		});
+
+	//create points based on the groups dataset info
+	var points = dots.selectAll('.circle').data(d => d.info);
 
 	points
 		.enter()
 		.append('circle')
 		.attr('class', 'circle')
-		.attr('r', 6)
-		.style('fill', (d, i) => {
-			return color(i);
-		})
-		.style('opacity', 0)
-		.merge(points)
-		.transition("history")
-		.duration(1000)
-		.attr('cx', d => xScale(d.info[0].year))
-		.attr('cy', d => yScale(d.info[0].count))
+		.attr('r', 5)
+		.style('opacity', 0);
+
+
+	//reasign
+	//get current group of dots
+	var dots = chart.selectAll(".dots").data(dataset);
+	//get current points
+	var points = dots.selectAll('.circle').data(d => d.info);
+
+
+	//update points to new positions
+	points
+		.transition("move")
+		.duration(800)
+		.attr('cx', d => xScale(d.year))
+		.attr('cy', d => yScale(d.count))
+		.transition("move")
+		.duration(500)
 		.style('opacity', 1);
 
+	//remove points not attached to the dataset
+	points
+		.exit()
+		.transition("remove")
+		.duration(100)
+		.style('opacity', 0)
+		.remove;
+
+	//hide group of dots
+	dots
+		.exit()
+		.remove;
 
 	// after that, always update xAxis scale, xAxisGroup with xAxis (call), 
 	// and same for yAxis scale and yAxisGroup
@@ -330,7 +348,7 @@ function filterByYear(dataset) {
 }
 
 function autocomplete(dataset) {
-	//poplate array with non repeating names
+	//populate array with non repeating names
 	let names = d3.map(dataset, function (d) {
 		return d.name;
 	}).keys();
@@ -352,28 +370,44 @@ function autocomplete(dataset) {
 }
 
 function createBtns(value) {
-	if (namesArray.length < 5) {
+
+	var i = namesArray.indexOf('');
+
+	//if there are empty strings in array
+	if (i != -1) {
+		//replace empty string with new name value
+		namesArray[i] = value;
+		//create name tag
 		$('#names').append(`<div class='tags' id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
-		namesArray.push(value);
-		//console.log(namesArray);
+	} else {
+		//add the new name to the array
+		//and create a name tag
+		//if array length <5
+		if (namesArray.length < 5) {
+			$('#names').append(`<div class='tags' id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
+			namesArray.push(value);
+		}
 	}
+
+	console.log(namesArray);
 }
 
-function btnFunction() {
-	//removes the name from away and its corresponding button
+function btnFunction(dataset) {
+	//removes the name from array 
+	//and its corresponding button
 	$(document).on('click', '.item', function (e) {
-		let name = $(this).parent().prop("id");
 
+		let name = $(this).parent().prop("id");
 		var i = namesArray.indexOf(name);
+
 		if (i != -1) {
-			namesArray.splice(i, 1);
+			namesArray[i] = '';
 		}
 		$(this).parent().remove();
 
-
-		let subset = getNamesDataset();
+		console.log(namesArray);
+		let subset = getNamesDataset(dataset);
 		filterdata = filterByYear(subset);
 		updateChart(filterdata);
-		//console.log(namesArray);
 	});
 }

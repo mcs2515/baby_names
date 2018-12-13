@@ -14,9 +14,13 @@ let xAxisGroup, yAxisGroup;
 
 let chart;
 let dataset;
+let filterdata;
 let w, h;
 let leftMargin, rightMargin, bottomMargin;
 let tooltip;
+let color;
+
+let namesArray = [];
 
 window.onload = function () {
 
@@ -28,15 +32,20 @@ window.onload = function () {
 		.then((d) => {
 
 			dataset = d;
-			console.log(dataset);
+			//console.log(dataset);
 			autocomplete(dataset);
+			btnFunction();
 			makeChart(dataset);
 
 			search.addEventListener('click', function () {
-				let value = document.querySelector('#nameField').value;
-				let subset = getNameData(value);
-				let yearFilter = filterByYear(subset);
-				updateChart(yearFilter);
+
+				let value = document.querySelector('#nameField').value
+				value = value.charAt(0).toUpperCase() + value.slice(1); //titlecase
+				createBtns(value);
+				
+				let subset = getNamesDataset();
+				filterdata = filterByYear(subset);
+				updateChart(filterdata);
 			})
 		});
 }
@@ -51,6 +60,8 @@ function makeChart(dataset) {
 	rightMargin = 20;
 	bottomMargin = 50;
 
+	color = d3.scaleOrdinal(d3.schemeCategory10);
+	
 	tooltip = d3.select("body").append("div")
 		.attr('id', 'tooltip').style("opacity", 0);
 
@@ -103,72 +114,49 @@ function makeChart(dataset) {
 		.text("Years");
 }
 
-// gridlines in y axis function
-function createHorizontalLines() {
-	return d3.axisLeft(yScale);
-}
-
-function getNameData(name) {
-	let subset = [];
-
-	for (let i = 0; i < dataset.length; i++) {
-		if (dataset[i].name == name) {
-			let datum = {
-				year: dataset[i].year,
-				count: dataset[i].count,
-				gender: dataset[i].gender,
-				state: dataset[i].state,
-			};
-			subset.push(datum);
-		}
-	}
-
-	//console.log(subset);
-	return subset;
-}
-
-function filterByYear(dataset) {
-	let subset = [];
-	let years = d3.map(dataset, function (d) {
-		return d.year;
-	}).keys();
-
-	for (let i = 0; i < years.length; i++) {
-		let total = 0;
-		for (let k = 0; k < dataset.length; k++) {
-			if (years[i] == dataset[k].year) {
-				total += dataset[k].count;
-			}
-		}
-
-		let datum = {
-			year: parseInt(years[i]),
-			count: parseInt(total),
-			gender: dataset[i].gender,
-		};
-		subset.push(datum);
-	}
-
-	//console.log(subset);
-	return subset;
-}
-
 function updateChart(dataset) {
 
 	console.log(dataset);
 
+	var coordinates = [];
+	let max = 0;
+	let min = 0;
+	
+	for(var i = 0; i < dataset.length; i++){
+		let values = d3.extent(dataset[i].info, d => d.count);
+		
+		if(values[0] < min){
+			min = values[0];
+		}
+		if(values[1] > max){
+			max = values[1];
+		}
+		
+
+		for(var k = 0; k<dataset[i].info.length; k++){
+			let data = {
+				year: dataset[i].info[k].year,
+				count: dataset[i].info[k].count
+			};
+			
+			coordinates.push(data);
+		}
+	}
+	
 	let lines = chart.selectAll('.line').data(dataset);
-	let points = chart.selectAll('.circle').data(dataset);
+	let points = chart.selectAll('.circle').data(coordinates);
 	let y_grid = chart.selectAll('.y-grid').data(dataset);
-	// adding 1 more year to the max & min so last rect doesn't go off x-axis
-	xScale.domain([d3.min(dataset, d => d.year), d3.max(dataset, d => d.year)]);
-	yScale.domain([d3.min(dataset, d => d.count), d3.max(dataset, d => d.count)]);
+	
+	
+	
+	
+	//console.log(`${min},${max}`);
+	yScale.domain([min, max]);
 
 
 	//update y-axis grid line position
 	y_grid
 		.enter()
-		.data(dataset)
 		.append("g")
 		.attr("class", "y-grid")
 		.style("stroke-dasharray", ("3,3"))
@@ -208,27 +196,41 @@ function updateChart(dataset) {
 		.style('stroke', 'red') //d9c8ca
 		.attr("stroke-width", 5)
 		.style('fill', 'none')
+		.style('opacity', 0)
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
-		.merge(lines)
+		.style('stroke', (d,i) => {return color(i);})
 		.transition("history")
 		.duration(1000)
-		.attr('d', d => line(dataset));
+		.style('opacity', 1)
+		.attr('d', d => line(d.info));
+	
+	//updates old lines
+	lines
+		.transition("history")
+		.duration(1000)
+		.attr('d', d => line(d.info));
+	
+	//remove lines
+	lines
+		.exit()
+		.transition("bars")
+		.duration(200)
+		.style('opacity', 0)
+		.remove();
 
 	points
 		.enter()
 		.append('circle')
 		.attr('class', 'circle')
 		.attr('r', 6)
-		.style('fill', 'black')
+		.style('fill', (d,i) => {return color(i);})
 		.style('opacity', 0)
 		.merge(points)
 		.transition("history")
 		.duration(1000)
 		.attr('cx', d => xScale(d.year))
 		.attr('cy', d => yScale(d.count))
-		.transition("opacity")
-		.duration(500)
 		.style('opacity', 1);
 
 
@@ -247,6 +249,82 @@ function updateChart(dataset) {
 	// remove the x-axis so that it redraws ontop of everything
 	xAxisGroup.remove();
 	chart.node().appendChild(xAxisGroup.node());
+}
+
+// gridlines in y axis function
+function createHorizontalLines() {
+	return d3.axisLeft(yScale);
+}
+
+function getNamesDataset() {
+	let subset = [];
+
+	for (let k = 0; k < namesArray.length; k++) {
+
+		let nameobj = {
+			name: namesArray[k],
+			info: []
+		}
+
+		for (let i = 0; i < dataset.length; i++) {
+			if (dataset[i].name == namesArray[k]) {
+				let datum = {
+					year: dataset[i].year,
+					count: dataset[i].count,
+					gender: dataset[i].gender,
+					state: dataset[i].state,
+				};
+
+				nameobj.info.push(datum);
+			}
+		}
+
+		subset.push(nameobj);
+	}
+
+	//console.log(subset);
+	return subset;
+}
+
+function filterByYear(dataset) {
+
+	let subset = [];
+	
+	for(let t = 0; t < dataset.length; t++){
+		let years = d3.map(dataset[t].info, function (d) {
+			return d.year;
+		}).keys();
+
+
+		let nameobj = {
+			name: dataset[t].name,
+			info: []
+		}
+
+		for(let i = 0; i < years.length; i++) {
+			let total = 0;
+
+			for (let k = 0; k < dataset[t].info.length; k++) {
+
+				if (years[i] == dataset[t].info[k].year) {
+
+					total += dataset[t].info[k].count;
+				}
+			}
+			
+			let datum = {
+				year: parseInt(years[i]),
+				count: parseInt(total),
+			};
+
+			nameobj.info.push(datum);
+		}
+		
+		subset.push(nameobj);
+	}
+
+	//console.log(subset);
+	return subset;
 }
 
 function autocomplete(dataset) {
@@ -268,5 +346,32 @@ function autocomplete(dataset) {
 				$("#search").click();
 			}
 		});
+	});
+}
+
+function createBtns(value){
+	if(namesArray.length < 5){
+		$('#names').append(`<div id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
+		namesArray.push(value);
+		//console.log(namesArray);
+	}
+}
+
+function btnFunction(){
+	//removes the name from away and its corresponding button
+	$(document).on('click', '.item', function (e) {
+		let name = $(this).parent().prop("id");
+
+		var i = namesArray.indexOf(name);
+		if (i != -1) {
+			namesArray.splice(i, 1);
+		}
+		$(this).parent().remove();
+		
+		
+		let subset = getNamesDataset();
+		filterdata = filterByYear(subset);
+		updateChart(filterdata);
+		//console.log(namesArray);
 	});
 }

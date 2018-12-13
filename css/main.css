@@ -14,7 +14,7 @@ body {
 
 p {}
 
-button:focus {
+input:focus {
 	outline: 0;
 }
 
@@ -87,4 +87,20 @@ svg {
 	font-family: 'Quicksand', sans-serif;
 	letter-spacing: 1px;
 	font-size: 10pt;
+}
+
+#nameField {
+	border: 1px solid gray;
+	text-indent: 5pt;
+	height: 30px;
+	font-family: 'Quicksand', sans-serif;
+	width: 100%;
+	max-width: 200px;
+	margin: 0;
+}
+
+#search {
+	height: 34px;
+	margin-left: -3px;
+	margin-top: -1px;
 }

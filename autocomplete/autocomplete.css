@@ -1,3 +1,7 @@
+@import url('https://fonts.googleapis.com/css?family=Quicksand');
+@import url('https://fonts.googleapis.com/css?family=Comfortaa');
+
+
 .xdsoft_autocomplete,
 .xdsoft_autocomplete div,
 .xdsoft_autocomplete span{
@@ -32,6 +36,7 @@ text-align: start;
 	background-color:#fff;
 	min-width:100%;
 	overflow:auto;
+	font-family: 'Quicksand', sans-serif;
 }
 .xdsoft_autocomplete .xdsoft_autocomplete_hint{
 	position:absolute;

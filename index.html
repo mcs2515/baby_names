@@ -6,8 +6,8 @@
 	<meta charset="utf-8">
 	<script src="https://d3js.org/d3.v5.min.js"></script>
 	<link rel="stylesheet" href="css/main.css">
-	<!--		autocomplete library-->
-	<link type="text/css" rel="stylesheet" href="autocomplete/autocomplete.css" />
+	<link rel="stylesheet" href="autocomplete/autocomplete.css">
+	
 	
 </head>
 
@@ -17,11 +17,12 @@
 			<h1>Popular Baby Names Over Time</h1>
 
 			<div class='chart-div'>
-				<form>
+				<form class='form'>
 					Enter Name:<br>
-					<input type="text" name="firstname" id='nameField'>
+					<input type="text" name="firstname" id='nameField' onfocus="if(this.value == value) { this.value = ''; }">
 					<input type="button" id='search' value="Search">
 				</form>
+				<div id="names"></div>
 				<select id='filter'>
 					<label>Filter by:</label>
 					<option></option>

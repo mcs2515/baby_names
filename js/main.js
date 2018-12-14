@@ -28,7 +28,7 @@ window.onload = function () {
 	let search = document.querySelector('#search');
 
 	//get the csv and call appropriate functions
-	d3.csv('../dataset/StateNames.csv', rowConverter)
+	d3.csv('../datasets/StateNames.csv', rowConverter)
 		.then((d) => {
 
 			//console.log(dataset);

@@ -19,6 +19,7 @@ let leftMargin, rightMargin, bottomMargin;
 let tooltip;
 let color;
 
+let names = [];
 let namesArray = [];
 
 window.onload = function () {
@@ -39,11 +40,16 @@ window.onload = function () {
 
 				let value = document.querySelector('#nameField').value
 				value = value.charAt(0).toUpperCase() + value.slice(1); //titlecase
-				createBtns(value);
 
-				let subset = getNamesDataset(d);
-				filterdata = filterByYear(subset);
-				updateChart(filterdata);
+				for (let i = 0; i < names.length; i++) {
+					if (names[i] == value) {
+						createBtns(value);
+
+						let subset = getNamesDataset(d);
+						filterdata = filterByYear(subset);
+						updateChart(filterdata);
+					}
+				}
 			})
 		});
 }
@@ -77,7 +83,6 @@ function makeChart(dataset) {
 	yScale = d3.scaleLinear()
 		.domain([d3.min(dataset, d => d.count), d3.max(dataset, d => d.count)])
 		.range([h - bottomMargin, 20]);
-
 
 	// AXES
 	xAxis = d3.axisBottom(xScale);
@@ -129,12 +134,10 @@ function updateChart(dataset) {
 			max = values[1];
 		}
 	}
-
-	let lines = chart.selectAll('.line').data(dataset);
-	let y_grid = chart.selectAll('.y-grid').data(dataset);
-
-	//console.log(`${min},${max}`);
+	
 	yScale.domain([min, max]);
+
+	let y_grid = chart.selectAll('.y-grid').data(dataset);
 
 	//update y-axis grid line position
 	y_grid
@@ -164,7 +167,8 @@ function updateChart(dataset) {
 		.remove();
 
 	/* LINE CHART CODE */
-	// build a D3 line generator 
+	// build a D3 line generator
+	let lines = chart.selectAll('.line').data(dataset);
 	let line = d3.line()
 		.x(d => xScale(d.year))
 		.y(d => yScale(d.count));
@@ -173,21 +177,21 @@ function updateChart(dataset) {
 	//draw line
 	lines
 		.enter()
-			.append('path')
-			.attr('class', 'line')
-			.style('stroke', 'red') //d9c8ca
-			.attr("stroke-width", 5)
-			.style('fill', 'none')
-			.style('opacity', 0)
-			.attr("stroke-linejoin", "round")
-			.attr("stroke-linecap", "round")
-			.style('stroke', (d, i) => {
-				return color(i);
-			})
-			.transition("move")
-			.duration(1000)
-			.style('opacity', 1)
-			.attr('d', d => line(d.info));
+		.append('path')
+		.attr('class', 'line')
+		.style('stroke', 'red') //d9c8ca
+		.attr("stroke-width", 5)
+		.style('fill', 'none')
+		.style('opacity', 0)
+		.attr("stroke-linejoin", "round")
+		.attr("stroke-linecap", "round")
+		.style('stroke', (d, i) => {
+			return color(i);
+		})
+		.transition("move")
+		.duration(800)
+		.style('opacity', 1)
+		.attr('d', d => line(d.info));
 
 	//updates old lines
 	lines
@@ -198,9 +202,9 @@ function updateChart(dataset) {
 	//remove lines
 	lines
 		.exit()
-		.transition("remove")
-		.duration(200)
-		.style('opacity', 0)
+			.transition("remove")
+			.duration(200)
+			.style('opacity', 0)
 		.remove();
 
 
@@ -209,6 +213,7 @@ function updateChart(dataset) {
 		.enter()
 		.append("g")
 		.attr("class", "dots")
+		.style('opacity', 0)
 		.style('fill', (d, i) => {
 			return color(i);
 		});
@@ -221,7 +226,8 @@ function updateChart(dataset) {
 		.append('circle')
 		.attr('class', 'circle')
 		.attr('r', 5)
-		.style('opacity', 0);
+		.attr('cx', d => xScale(d.year))
+		.attr('cy', d => yScale(d.count));
 
 
 	//reasign
@@ -231,28 +237,31 @@ function updateChart(dataset) {
 	var points = dots.selectAll('.circle').data(d => d.info);
 
 
+	dots
+		.transition("opacity")
+		.duration(800)
+		.style('opacity', 1);
+	
 	//update points to new positions
 	points
 		.transition("move")
 		.duration(800)
 		.attr('cx', d => xScale(d.year))
-		.attr('cy', d => yScale(d.count))
-		.transition("move")
-		.duration(500)
-		.style('opacity', 1);
+		.attr('cy', d => yScale(d.count));
 
 	//remove points not attached to the dataset
 	points
 		.exit()
-		.transition("remove")
-		.duration(100)
-		.style('opacity', 0)
-		.remove;
+		.remove();
+
 
 	//hide group of dots
 	dots
 		.exit()
-		.remove;
+			.transition("remove")
+			.duration(100)
+			.style('opacity', 0)
+		.remove();
 
 	// after that, always update xAxis scale, xAxisGroup with xAxis (call), 
 	// and same for yAxis scale and yAxisGroup
@@ -325,7 +334,6 @@ function filterByYear(dataset) {
 			let total = 0;
 
 			for (let k = 0; k < dataset[t].info.length; k++) {
-
 				if (years[i] == dataset[t].info[k].year) {
 
 					total += dataset[t].info[k].count;
@@ -349,7 +357,7 @@ function filterByYear(dataset) {
 
 function autocomplete(dataset) {
 	//populate array with non repeating names
-	let names = d3.map(dataset, function (d) {
+	names = d3.map(dataset, function (d) {
 		return d.name;
 	}).keys();
 
@@ -370,26 +378,13 @@ function autocomplete(dataset) {
 }
 
 function createBtns(value) {
-
-	var i = namesArray.indexOf('');
-
-	//if there are empty strings in array
-	if (i != -1) {
-		//replace empty string with new name value
-		namesArray[i] = value;
-		//create name tag
+	//if array length <5
+	if (namesArray.length < 5) {
+		//create a name tag
 		$('#names').append(`<div class='tags' id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
-	} else {
 		//add the new name to the array
-		//and create a name tag
-		//if array length <5
-		if (namesArray.length < 5) {
-			$('#names').append(`<div class='tags' id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
-			namesArray.push(value);
-		}
+		namesArray.push(value);
 	}
-
-	console.log(namesArray);
 }
 
 function btnFunction(dataset) {
@@ -401,11 +396,10 @@ function btnFunction(dataset) {
 		var i = namesArray.indexOf(name);
 
 		if (i != -1) {
-			namesArray[i] = '';
+			namesArray.splice(i, 1);
 		}
 		$(this).parent().remove();
 
-		console.log(namesArray);
 		let subset = getNamesDataset(dataset);
 		filterdata = filterByYear(subset);
 		updateChart(filterdata);

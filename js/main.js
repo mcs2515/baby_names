@@ -19,8 +19,11 @@ let leftMargin, rightMargin, bottomMargin;
 let tooltip;
 let color;
 
+let zoom;
+
 let names = [];
 let namesArray = [];
+let key = (d) => d.name;
 
 window.onload = function () {
 
@@ -68,10 +71,21 @@ function makeChart(dataset) {
 
 	tooltip = d3.select("body").append("div")
 		.attr('id', 'tooltip').style("opacity", 0);
+	
+	//ZOOMING
+	zoom = d3.zoom()
+    .scaleExtent([1, Infinity])
+    .translateExtent([[0, 0], [w, h]])
+    .extent([[0, 0], [w, h]]);
 
+	
+	
+	//CREATE CHART W and H
 	chart = d3.select('#chart')
 		.attr('width', w)
-		.attr('height', h);
+		.attr('height', h)
+		.call(zoom)
+		.on('wheel.zoom', zoomed);
 
 	//years on x-axis
 	xScale = d3.scaleTime()
@@ -168,7 +182,7 @@ function updateChart(dataset) {
 
 	/* LINE CHART CODE */
 	// build a D3 line generator
-	let lines = chart.selectAll('.line').data(dataset);
+	let lines = chart.selectAll('.line').data(dataset, key);
 	let line = d3.line()
 		.x(d => xScale(d.year))
 		.y(d => yScale(d.count));
@@ -179,7 +193,6 @@ function updateChart(dataset) {
 		.enter()
 		.append('path')
 		.attr('class', 'line')
-		.style('stroke', 'red') //d9c8ca
 		.attr("stroke-width", 5)
 		.style('fill', 'none')
 		.style('opacity', 0)
@@ -188,17 +201,37 @@ function updateChart(dataset) {
 		.style('stroke', (d, i) => {
 			return color(i);
 		})
+//	.on('mousemove', function (d) {
+//			d3.select(this)
+//				.transition("fill")
+//				.duration(250)
+//				.style('stroke', '#f99b92')
+//				.style('cursor', 'pointer');
+//
+//			tooltip
+//				.style('left', (d3.event.pageX) - 50 + "px")
+//				.style('top', (d3.event.pageY) - 60 + "px")
+//				.text("Name: " + d.name)
+//				.transition("tooltip")
+//				.duration(200)
+//				.style("opacity", .8);
+//		})
+
 		.transition("move")
 		.duration(800)
 		.style('opacity', 1)
-		.attr('d', d => line(d.info));
+		.attr('d', d => line(d.info))
+	
+	;
 
 	//updates old lines
 	lines
 		.transition("move")
 		.duration(800)
 		.attr('d', d => line(d.info));
+	
 
+		
 	//remove lines
 	lines
 		.exit()
@@ -209,7 +242,7 @@ function updateChart(dataset) {
 
 
 	//create a group for the points
-	var dots = chart.selectAll(".dots").data(dataset)
+	var dots = chart.selectAll(".dots").data(dataset,key)
 		.enter()
 		.append("g")
 		.attr("class", "dots")
@@ -232,10 +265,9 @@ function updateChart(dataset) {
 
 	//reasign
 	//get current group of dots
-	var dots = chart.selectAll(".dots").data(dataset);
+	var dots = chart.selectAll(".dots").data(dataset,key);
 	//get current points
 	var points = dots.selectAll('.circle').data(d => d.info);
-
 
 	dots
 		.transition("opacity")
@@ -251,6 +283,7 @@ function updateChart(dataset) {
 
 	//remove points not attached to the dataset
 	points
+		.merge(points)
 		.exit()
 		.remove();
 
@@ -278,6 +311,21 @@ function updateChart(dataset) {
 	// remove the x-axis so that it redraws ontop of everything
 	xAxisGroup.remove();
 	chart.node().appendChild(xAxisGroup.node());
+}
+
+function zoomed(){
+	
+	var t = d3.event.transform;
+	console.log(t);
+	//chart.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+	//chart.attr("transform", `scale(${d3.event.scale})`);
+//	var offset = chart.translate();
+//	
+//	offset[0] += d3.event.dx;
+//	offset[1] += d3.event.dy;
+//	
+//	chart.translate(offset);
+	
 }
 
 // gridlines in y axis function

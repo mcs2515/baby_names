@@ -17,7 +17,8 @@ let filterdata;
 let w, h;
 let leftMargin, rightMargin, bottomMargin;
 let tooltip;
-let color;
+let current_colors = [];
+let colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'];
 
 let zoom;
 
@@ -46,11 +47,14 @@ window.onload = function () {
 
 				for (let i = 0; i < names.length; i++) {
 					if (names[i] == value) {
-						createBtns(value);
+						let success = addName(value);
 
-						let subset = getNamesDataset(d);
-						filterdata = filterByYear(subset);
-						updateChart(filterdata);
+						if (success) {
+							let subset = getNamesDataset(d);
+							createBtns(subset);
+							filterdata = filterByYear(subset);
+							updateChart(filterdata);
+						}
 					}
 				}
 			})
@@ -71,15 +75,15 @@ function makeChart(dataset) {
 
 	tooltip = d3.select("body").append("div")
 		.attr('id', 'tooltip').style("opacity", 0);
-	
+
 	//ZOOMING
 	zoom = d3.zoom()
-    .scaleExtent([1, Infinity])
-    .translateExtent([[0, 0], [w, h]])
-    .extent([[0, 0], [w, h]]);
+		.scaleExtent([1, Infinity])
+		.translateExtent([[0, 0], [w, h]])
+		.extent([[0, 0], [w, h]]);
 
-	
-	
+
+
 	//CREATE CHART W and H
 	chart = d3.select('#chart')
 		.attr('width', w)
@@ -133,7 +137,7 @@ function makeChart(dataset) {
 
 function updateChart(dataset) {
 
-	console.log(dataset);
+	//console.log(dataset);
 
 	let max = 0;
 	let min = 0;
@@ -148,7 +152,7 @@ function updateChart(dataset) {
 			max = values[1];
 		}
 	}
-	
+
 	yScale.domain([min, max]);
 
 	let y_grid = chart.selectAll('.y-grid').data(dataset);
@@ -198,30 +202,28 @@ function updateChart(dataset) {
 		.style('opacity', 0)
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
-		.style('stroke', (d, i) => {
-			return color(i);
-		})
-//	.on('mousemove', function (d) {
-//			d3.select(this)
-//				.transition("fill")
-//				.duration(250)
-//				.style('stroke', '#f99b92')
-//				.style('cursor', 'pointer');
-//
-//			tooltip
-//				.style('left', (d3.event.pageX) - 50 + "px")
-//				.style('top', (d3.event.pageY) - 60 + "px")
-//				.text("Name: " + d.name)
-//				.transition("tooltip")
-//				.duration(200)
-//				.style("opacity", .8);
-//		})
+		.style('stroke', (d, i) => current_colors[i])
+		//	.on('mousemove', function (d) {
+		//			d3.select(this)
+		//				.transition("fill")
+		//				.duration(250)
+		//				.style('stroke', '#f99b92')
+		//				.style('cursor', 'pointer');
+		//
+		//			tooltip
+		//				.style('left', (d3.event.pageX) - 50 + "px")
+		//				.style('top', (d3.event.pageY) - 60 + "px")
+		//				.text("Name: " + d.name)
+		//				.transition("tooltip")
+		//				.duration(200)
+		//				.style("opacity", .8);
+		//		})
 
 		.transition("move")
 		.duration(800)
 		.style('opacity', 1)
 		.attr('d', d => line(d.info))
-	
+
 	;
 
 	//updates old lines
@@ -229,27 +231,25 @@ function updateChart(dataset) {
 		.transition("move")
 		.duration(800)
 		.attr('d', d => line(d.info));
-	
 
-		
+
+
 	//remove lines
 	lines
 		.exit()
-			.transition("remove")
-			.duration(200)
-			.style('opacity', 0)
+		.transition("remove")
+		.duration(200)
+		.style('opacity', 0)
 		.remove();
 
 
 	//create a group for the points
-	var dots = chart.selectAll(".dots").data(dataset,key)
+	var dots = chart.selectAll(".dots").data(dataset, key)
 		.enter()
 		.append("g")
 		.attr("class", "dots")
 		.style('opacity', 0)
-		.style('fill', (d, i) => {
-			return color(i);
-		});
+		.style('fill', (d, i) => current_colors[i]);
 
 	//create points based on the groups dataset info
 	var points = dots.selectAll('.circle').data(d => d.info);
@@ -265,7 +265,7 @@ function updateChart(dataset) {
 
 	//reasign
 	//get current group of dots
-	var dots = chart.selectAll(".dots").data(dataset,key);
+	var dots = chart.selectAll(".dots").data(dataset, key);
 	//get current points
 	var points = dots.selectAll('.circle').data(d => d.info);
 
@@ -273,7 +273,7 @@ function updateChart(dataset) {
 		.transition("opacity")
 		.duration(800)
 		.style('opacity', 1);
-	
+
 	//update points to new positions
 	points
 		.transition("move")
@@ -291,9 +291,9 @@ function updateChart(dataset) {
 	//hide group of dots
 	dots
 		.exit()
-			.transition("remove")
-			.duration(100)
-			.style('opacity', 0)
+		.transition("remove")
+		.duration(100)
+		.style('opacity', 0)
 		.remove();
 
 	// after that, always update xAxis scale, xAxisGroup with xAxis (call), 
@@ -313,19 +313,19 @@ function updateChart(dataset) {
 	chart.node().appendChild(xAxisGroup.node());
 }
 
-function zoomed(){
-	
+function zoomed() {
+
 	var t = d3.event.transform;
 	console.log(t);
 	//chart.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
 	//chart.attr("transform", `scale(${d3.event.scale})`);
-//	var offset = chart.translate();
-//	
-//	offset[0] += d3.event.dx;
-//	offset[1] += d3.event.dy;
-//	
-//	chart.translate(offset);
-	
+	//	var offset = chart.translate();
+	//	
+	//	offset[0] += d3.event.dx;
+	//	offset[1] += d3.event.dy;
+	//	
+	//	chart.translate(offset);
+
 }
 
 // gridlines in y axis function
@@ -333,13 +333,26 @@ function createHorizontalLines() {
 	return d3.axisLeft(yScale);
 }
 
+function addName(name) {
+	if (namesArray.length < 5) {
+		//add the new name to the array
+		namesArray.push(name);
+		return true;
+	}
+
+	return false;
+}
+
 function getNamesDataset(dataset) {
 	let subset = [];
 
 	for (let k = 0; k < namesArray.length; k++) {
 
+		let c = colors[k];
+
 		let nameobj = {
 			name: namesArray[k],
+			color: c,
 			info: []
 		}
 
@@ -359,6 +372,7 @@ function getNamesDataset(dataset) {
 		subset.push(nameobj);
 	}
 
+
 	//console.log(subset);
 	return subset;
 }
@@ -372,9 +386,16 @@ function filterByYear(dataset) {
 			return d.year;
 		}).keys();
 
+		let c = dataset[t].color;
+		var i = current_colors.indexOf(c);
+
+		if (i == -1) {
+			current_colors.push(c);
+		}
 
 		let nameobj = {
 			name: dataset[t].name,
+			color: c,
 			info: []
 		}
 
@@ -425,19 +446,19 @@ function autocomplete(dataset) {
 	});
 }
 
-function createBtns(value) {
-	//if array length <5
-	if (namesArray.length < 5) {
-		//create a name tag
-		$('#names').append(`<div class='tags' id='${value}'><a href="#" class="item">X</a> ${value} </div>`);
-		//add the new name to the array
-		namesArray.push(value);
-	}
+function createBtns(dataset) {
+
+	let lastValue = dataset.length - 1;
+
+	//create a name tag
+	$('#names').append(`<div class='tags ${dataset[lastValue].color}' id='${dataset[lastValue].name}'><a href="#" class="item">X</a> ${dataset[lastValue].name} </div>`);
+
 }
 
 function btnFunction(dataset) {
 	//removes the name from array 
 	//and its corresponding button
+
 	$(document).on('click', '.item', function (e) {
 
 		let name = $(this).parent().prop("id");
@@ -447,6 +468,13 @@ function btnFunction(dataset) {
 			namesArray.splice(i, 1);
 		}
 		$(this).parent().remove();
+
+		let c = $(this).parent().prop("class").split(' ')[1];
+		var i = current_colors.indexOf(c);
+
+		if (i != -1) {
+			current_colors.splice(i, 1)
+		}
 
 		let subset = getNamesDataset(dataset);
 		filterdata = filterByYear(subset);

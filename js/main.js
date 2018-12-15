@@ -133,6 +133,10 @@ function updateChart(dataset) {
 	updateYGrid(y_grid);
 
 
+	//update the tag colors
+	let tags = d3.selectAll('.tag')
+		.attr("class", (d,i) => "tag " +  current_colors[i]);
+	
 	/* LINE CHART CODE */
 	// build a D3 line generator
 	let lines = chart.selectAll('.line').data(dataset, key);
@@ -387,7 +391,7 @@ function createNameTag(dataset) {
 	let lastValue = dataset.length - 1;
 
 	//create a name tag
-	$('#names').append(`<div class='tags ${dataset[lastValue].color}' 
+	$('#tags').append(`<div class="tag" 
 		id='${dataset[lastValue].name}'><a href="#" class="item">X</a> 
 		${dataset[lastValue].name} </div>`);
 }

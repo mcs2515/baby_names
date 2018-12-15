@@ -132,33 +132,60 @@ svg {
 	width: 120px;
 }
 
-#names{
+#tags{
 	display: flex;
 	align-items: start;
 	max-width: 900px;
 	margin: 20px auto;
+	height: 30px;
 }
 
-.tags{
+.tag{
 	font-family: 'Quicksand', sans-serif;
 	background: gray;
 	padding: 4px 15px 5px 15px;
 	border-radius: 15px;
 	margin-right: 10px;
 	pointer-events: none;
+	font-weight: bold;
+	letter-spacing: 2px;
 }
 
-.tags a{
+.tag a{
 	text-decoration: none;
-	padding: 2px 7px;
+	padding: 2px 5px 2px 7px;
 	font-size: 11pt;
-	font-weight: bold;
+	font-weight: bolder;
 	margin-left: -10px;
 	margin-top: -30px;
 	pointer-events: visible;
+	color: rgba(246,246,246, .5);
 }
 
-.tags a:hover{
-	background: white;
+.tag a:hover{
 	border-radius: 20px;
+	background: rgba(246,246,246, .5);
+}
+
+[class="tag #1f77b4"]{
+	background: #1f77b4;
+	color: #f6f6f6;
+}
+
+[class="tag #ff7f0e"]{
+	background: #ff7f0e;
+	
+}
+
+[class="tag #2ca02c"]{
+	background: #2ca02c;
+	color: #f6f6f6;
+}
+
+[class="tag #d62728"]{
+	background: #d62728;
+}
+
+[class="tag #9467bd"]{
+	background: #9467bd;
 }

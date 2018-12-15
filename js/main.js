@@ -5,7 +5,7 @@ function rowConverter(row) {
 		gender: row.Gender,
 		state: row.State,
 		count: parseInt(row.Count),
-	}
+	};
 }
 
 let xScale, yScale;
@@ -13,7 +13,6 @@ let xAxis, yAxis;
 let xAxisGroup, yAxisGroup;
 
 let chart;
-let filterdata;
 let w, h;
 let leftMargin, rightMargin, bottomMargin;
 let tooltip;
@@ -37,27 +36,9 @@ window.onload = function () {
 
 			//console.log(dataset);
 			autocomplete(d);
-			btnFunction(d);
 			makeChart(d);
-
-			search.addEventListener('click', function () {
-
-				let value = document.querySelector('#nameField').value
-				value = value.charAt(0).toUpperCase() + value.slice(1); //titlecase
-
-				for (let i = 0; i < names.length; i++) {
-					if (names[i] == value) {
-						let success = addName(value);
-
-						if (success) {
-							let subset = getNamesDataset(d);
-							createBtns(subset);
-							filterdata = filterByYear(subset);
-							updateChart(filterdata);
-						}
-					}
-				}
-			})
+			searchBtn(d);
+			deleteNameTag(d);
 		});
 }
 
@@ -76,21 +57,7 @@ function makeChart(dataset) {
 	tooltip = d3.select("body").append("div")
 		.attr('id', 'tooltip').style("opacity", 0);
 
-	//ZOOMING
-	zoom = d3.zoom()
-		.scaleExtent([1, Infinity])
-		.translateExtent([[0, 0], [w, h]])
-		.extent([[0, 0], [w, h]]);
-
-
-
-	//CREATE CHART W and H
-	chart = d3.select('#chart')
-		.attr('width', w)
-		.attr('height', h)
-		.call(zoom)
-		.on('wheel.zoom', zoomed);
-
+	//SCALES
 	//years on x-axis
 	xScale = d3.scaleTime()
 		// adding 1 more year to the max & min so last rect doesn't go off x-axis
@@ -101,6 +68,38 @@ function makeChart(dataset) {
 	yScale = d3.scaleLinear()
 		.domain([d3.min(dataset, d => d.count), d3.max(dataset, d => d.count)])
 		.range([h - bottomMargin, 20]);
+
+
+	//ZOOMING
+	zoom = d3.zoom()
+		.scaleExtent([1, Infinity])
+		.translateExtent([[0, 0], [w, h]])
+		.extent([[0, 0], [w, h]]);
+
+
+	//CREATE CHART
+	chart = d3.select('#chart')
+		.attr('width', w)
+		.attr('height', h)
+		.call(zoom)
+		.on('wheel.zoom', zoomed);
+
+	// CHART LABELS
+	chart.append("text")
+		.attr("class", "labels")
+		.attr("transform", "rotate(-90)")
+		.attr("x", -(h - bottomMargin) / 2)
+		.attr("y", 20)
+		.style("text-anchor", "middle")
+		.text("Count");
+
+	chart.append("text")
+		.attr("class", "labels")
+		.attr("x", h)
+		.attr("y", (w / 2))
+		.style("text-anchor", "middle")
+		.text("Years");
+
 
 	// AXES
 	xAxis = d3.axisBottom(xScale);
@@ -118,71 +117,21 @@ function makeChart(dataset) {
 		.attr('transform', `translate(70,0)`)
 		.call(yAxis);
 
-	// LABELS
-	chart.append("text")
-		.attr("class", "labels")
-		.attr("transform", "rotate(-90)")
-		.attr("x", -(h - bottomMargin) / 2)
-		.attr("y", 20)
-		.style("text-anchor", "middle")
-		.text("Count");
 
-	chart.append("text")
-		.attr("class", "labels")
-		.attr("x", h)
-		.attr("y", (w / 2))
-		.style("text-anchor", "middle")
-		.text("Years");
 }
 
 function updateChart(dataset) {
 
 	//console.log(dataset);
 
-	let max = 0;
-	let min = 0;
-
-	for (var i = 0; i < dataset.length; i++) {
-		let values = d3.extent(dataset[i].info, d => d.count);
-
-		if (values[0] < min) {
-			min = values[0];
-		}
-		if (values[1] > max) {
-			max = values[1];
-		}
-	}
-
-	yScale.domain([min, max]);
-
-	let y_grid = chart.selectAll('.y-grid').data(dataset);
+	//update the Y domain
+	let yDomain = updateYDomain(dataset);
+	yScale.domain([yDomain[0], yDomain[1]]);
 
 	//update y-axis grid line position
-	y_grid
-		.enter()
-		.append("g")
-		.attr("class", "y-grid")
-		.style("stroke-dasharray", ("3,3"))
-		.attr('transform', `translate(${leftMargin},0)`)
-		.style('opacity', 0)
-		.merge(y_grid)
-		.transition("grid")
-		.duration(1000)
-		.call(
-			d3.axisLeft(yScale)
-			.tickSize(-w)
-			.tickFormat("")
-		)
-		.transition("grid")
-		.duration(1000)
-		.style('opacity', 1);
+	let y_grid = chart.selectAll('.y-grid').data(dataset);
+	updateYGrid(y_grid);
 
-	y_grid
-		.exit()
-		.transition("remove")
-		.duration(1000)
-		.style('opacity', 0)
-		.remove();
 
 	/* LINE CHART CODE */
 	// build a D3 line generator
@@ -222,17 +171,13 @@ function updateChart(dataset) {
 		.transition("move")
 		.duration(800)
 		.style('opacity', 1)
-		.attr('d', d => line(d.info))
+		.attr('d', d => line(d.info));
 
-	;
-
-	//updates old lines
+	//updates lines to new postions
 	lines
 		.transition("move")
 		.duration(800)
 		.attr('d', d => line(d.info));
-
-
 
 	//remove lines
 	lines
@@ -243,6 +188,7 @@ function updateChart(dataset) {
 		.remove();
 
 
+	/* POINTS CODE */
 	//create a group for the points
 	var dots = chart.selectAll(".dots").data(dataset, key)
 		.enter()
@@ -251,7 +197,7 @@ function updateChart(dataset) {
 		.style('opacity', 0)
 		.style('fill', (d, i) => current_colors[i]);
 
-	//create points based on the groups dataset info
+	//create points based on the dot group's dataset info
 	var points = dots.selectAll('.circle').data(d => d.info);
 
 	points
@@ -263,16 +209,26 @@ function updateChart(dataset) {
 		.attr('cy', d => yScale(d.count));
 
 
-	//reasign
+	//reasign dots and points variables
 	//get current group of dots
 	var dots = chart.selectAll(".dots").data(dataset, key);
 	//get current points
 	var points = dots.selectAll('.circle').data(d => d.info);
 
+
+	//changes opacity of dots
 	dots
 		.transition("opacity")
 		.duration(800)
 		.style('opacity', 1);
+
+	//remove group of dots
+	dots
+		.exit()
+		.transition("remove")
+		.duration(100)
+		.style('opacity', 0)
+		.remove();
 
 	//update points to new positions
 	points
@@ -281,36 +237,13 @@ function updateChart(dataset) {
 		.attr('cx', d => xScale(d.year))
 		.attr('cy', d => yScale(d.count));
 
-	//remove points not attached to the dataset
+	//remove points
 	points
 		.merge(points)
 		.exit()
 		.remove();
 
-
-	//hide group of dots
-	dots
-		.exit()
-		.transition("remove")
-		.duration(100)
-		.style('opacity', 0)
-		.remove();
-
-	// after that, always update xAxis scale, xAxisGroup with xAxis (call), 
-	// and same for yAxis scale and yAxisGroup
-	//xAxis.scale(xScale);
-	xAxisGroup.transition("axis")
-		.duration(1000)
-		.call(xAxis);
-
-	//yAxis.scale(yScale);
-	yAxisGroup.transition("axis")
-		.duration(1000)
-		.call(yAxis);
-
-	// remove the x-axis so that it redraws ontop of everything
-	xAxisGroup.remove();
-	chart.node().appendChild(xAxisGroup.node());
+	updateAxis();
 }
 
 function zoomed() {
@@ -333,6 +266,8 @@ function createHorizontalLines() {
 	return d3.axisLeft(yScale);
 }
 
+//adds new name to the namesArray
+//if its length < 5, reurns true is successful
 function addName(name) {
 	if (namesArray.length < 5) {
 		//add the new name to the array
@@ -371,8 +306,6 @@ function getNamesDataset(dataset) {
 
 		subset.push(nameobj);
 	}
-
-
 	//console.log(subset);
 	return subset;
 }
@@ -424,6 +357,8 @@ function filterByYear(dataset) {
 	return subset;
 }
 
+
+//text field will try to autocomplete user input
 function autocomplete(dataset) {
 	//populate array with non repeating names
 	names = d3.map(dataset, function (d) {
@@ -446,38 +381,144 @@ function autocomplete(dataset) {
 	});
 }
 
-function createBtns(dataset) {
 
+function createNameTag(dataset) {
+	//get the last index value in the subset dataset
 	let lastValue = dataset.length - 1;
 
 	//create a name tag
-	$('#names').append(`<div class='tags ${dataset[lastValue].color}' id='${dataset[lastValue].name}'><a href="#" class="item">X</a> ${dataset[lastValue].name} </div>`);
-
+	$('#names').append(`<div class='tags ${dataset[lastValue].color}' 
+		id='${dataset[lastValue].name}'><a href="#" class="item">X</a> 
+		${dataset[lastValue].name} </div>`);
 }
 
-function btnFunction(dataset) {
-	//removes the name from array 
-	//and its corresponding button
+
+//adds text field value to names array
+//and creates a tag if successful
+function searchBtn(dataset) {
+	search.addEventListener('click', function () {
+		let string = document.querySelector('#nameField').value
+		string = string.charAt(0).toUpperCase() + string.slice(1); //titlecase
+
+		//if the string = a name in the dataset
+		for (let i = 0; i < names.length; i++) {
+			if (names[i] == string) {
+				//try to add the name
+				let success = addName(string);
+
+				//create tag if successful
+				if (success) {
+					updateDataset(dataset, true);
+				}
+			}
+		}
+	});
+}
+
+
+//removes the name from array 
+//and its corresponding button
+function deleteNameTag(dataset) {
 
 	$(document).on('click', '.item', function (e) {
 
+		//get the tag's parent div id name
 		let name = $(this).parent().prop("id");
+		//find index of the name in the namesArray
 		var i = namesArray.indexOf(name);
 
+		//if index found, remove the name from the namesArray
+		//and its corresponding div
 		if (i != -1) {
 			namesArray.splice(i, 1);
+			$(this).parent().remove();
 		}
-		$(this).parent().remove();
 
+		//get the tag's parent's second class name (a color)
 		let c = $(this).parent().prop("class").split(' ')[1];
 		var i = current_colors.indexOf(c);
 
+		//if index found, remove the name from the current_colors array
 		if (i != -1) {
 			current_colors.splice(i, 1)
 		}
 
-		let subset = getNamesDataset(dataset);
-		filterdata = filterByYear(subset);
-		updateChart(filterdata);
+		updateDataset(dataset, false);
 	});
+}
+
+
+//is called whenever adding or deleting a name tag
+function updateDataset(dataset, adding) {
+	let subset = getNamesDataset(dataset);
+
+	//create new tag if adding
+	if (adding) {
+		createNameTag(subset);
+	}
+
+	let filtered = filterByYear(subset);
+
+	updateChart(filtered);
+}
+
+
+function updateYDomain(dataset) {
+	let domain = [0, 0];
+
+	for (var i = 0; i < dataset.length; i++) {
+		let values = d3.extent(dataset[i].info, d => d.count);
+
+		//x
+		if (values[0] < domain[0]) {
+			domain[0] = values[0];
+		}
+		//y
+		if (values[1] > domain[1]) {
+			domain[1] = values[1];
+		}
+	}
+
+	return domain;
+}
+
+
+function updateYGrid(y_grid) {
+	y_grid
+		.enter()
+		.append("g")
+		.attr("class", "y-grid")
+		.style("stroke-dasharray", ("3,3"))
+		.attr('transform', `translate(${leftMargin},0)`)
+		.style('opacity', 0)
+		.merge(y_grid)
+		.transition("grid")
+		.duration(1000)
+		.call(
+			d3.axisLeft(yScale)
+			.tickSize(-w)
+			.tickFormat("")
+		)
+		.transition("grid")
+		.duration(1000)
+		.style('opacity', 1);
+
+	y_grid
+		.exit()
+		.transition("remove")
+		.duration(1000)
+		.style('opacity', 0)
+		.remove();
+}
+
+
+function updateAxis() {
+	// after that, always update yAxis scale
+	yAxisGroup.transition("axis")
+		.duration(1000)
+		.call(yAxis);
+
+	// remove the x-axis so that it redraws ontop of everything
+	xAxisGroup.remove();
+	chart.node().appendChild(xAxisGroup.node());
 }

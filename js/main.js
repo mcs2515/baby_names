@@ -19,11 +19,13 @@ let tooltip;
 let current_colors = [];
 let colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'];
 
-let zoom;
-
 let names = [];
 let namesArray = [];
 let key = (d) => d.name;
+
+let selectedName;
+let selectedYear;
+let original_dataset;
 
 window.onload = function () {
 
@@ -34,6 +36,7 @@ window.onload = function () {
 	d3.csv('dataset/StateNames.csv', rowConverter)
 		.then((d) => {
 
+			original_dataset = d;
 			//console.log(dataset);
 			autocomplete(d);
 			makeChart(d);
@@ -70,25 +73,16 @@ function makeChart(dataset) {
 		.range([h - bottomMargin, 20]);
 
 
-	//ZOOMING
-	zoom = d3.zoom()
-		.scaleExtent([1, Infinity])
-		.translateExtent([[0, 0], [w, h]])
-		.extent([[0, 0], [w, h]]);
-
-
 	//CREATE CHART
 	chart = d3.select('#chart')
 		.attr('width', w)
-		.attr('height', h)
-		.call(zoom)
-		.on('wheel.zoom', zoomed);
+		.attr('height', h);
 
 	// CHART LABELS
 	chart.append("text")
 		.attr("class", "labels")
 		.attr("transform", "rotate(-90)")
-		.attr("x", -(h - bottomMargin) / 2)
+		.attr("x", -h / 2)
 		.attr("y", 20)
 		.style("text-anchor", "middle")
 		.text("Count");
@@ -96,7 +90,7 @@ function makeChart(dataset) {
 	chart.append("text")
 		.attr("class", "labels")
 		.attr("x", h)
-		.attr("y", (w / 2))
+		.attr("y", w / 2)
 		.style("text-anchor", "middle")
 		.text("Years");
 
@@ -116,8 +110,6 @@ function makeChart(dataset) {
 		.attr('class', 'axis-left')
 		.attr('transform', `translate(70,0)`)
 		.call(yAxis);
-
-
 }
 
 function updateChart(dataset) {
@@ -156,22 +148,6 @@ function updateChart(dataset) {
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
 		.style('stroke', (d, i) => current_colors[i])
-		//	.on('mousemove', function (d) {
-		//			d3.select(this)
-		//				.transition("fill")
-		//				.duration(250)
-		//				.style('stroke', '#f99b92')
-		//				.style('cursor', 'pointer');
-		//
-		//			tooltip
-		//				.style('left', (d3.event.pageX) - 50 + "px")
-		//				.style('top', (d3.event.pageY) - 60 + "px")
-		//				.text("Name: " + d.name)
-		//				.transition("tooltip")
-		//				.duration(200)
-		//				.style("opacity", .8);
-		//		})
-
 		.transition("move")
 		.duration(800)
 		.style('opacity', 1)
@@ -222,6 +198,7 @@ function updateChart(dataset) {
 
 	//changes opacity of dots
 	dots
+		.on("mousemove", d => selectedName = d.name)
 		.transition("opacity")
 		.duration(800)
 		.style('opacity', 1);
@@ -236,6 +213,11 @@ function updateChart(dataset) {
 
 	//update points to new positions
 	points
+		.on("click", d => {
+			selectedYear = d.year;
+			//function found in bar.js
+			showBarChart(original_dataset, selectedName, selectedYear);
+		})
 		.transition("move")
 		.duration(800)
 		.attr('cx', d => xScale(d.year))
@@ -250,20 +232,7 @@ function updateChart(dataset) {
 	updateAxis();
 }
 
-function zoomed() {
 
-	var t = d3.event.transform;
-	console.log(t);
-	//chart.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-	//chart.attr("transform", `scale(${d3.event.scale})`);
-	//	var offset = chart.translate();
-	//	
-	//	offset[0] += d3.event.dx;
-	//	offset[1] += d3.event.dy;
-	//	
-	//	chart.translate(offset);
-
-}
 
 // gridlines in y axis function
 function createHorizontalLines() {
@@ -462,7 +431,7 @@ function updateDataset(dataset, adding) {
 	}
 
 	let filtered = filterByYear(subset);
-
+	
 	updateChart(filtered);
 }
 
@@ -497,20 +466,18 @@ function updateYGrid(y_grid) {
 		.style('opacity', 0)
 		.merge(y_grid)
 		.transition("grid")
-		.duration(1000)
+		.duration(800)
 		.call(
 			d3.axisLeft(yScale)
 			.tickSize(-w)
 			.tickFormat("")
 		)
-		.transition("grid")
-		.duration(1000)
 		.style('opacity', 1);
 
 	y_grid
 		.exit()
 		.transition("remove")
-		.duration(1000)
+		.duration(800)
 		.style('opacity', 0)
 		.remove();
 }
@@ -519,7 +486,7 @@ function updateYGrid(y_grid) {
 function updateAxis() {
 	// after that, always update yAxis scale
 	yAxisGroup.transition("axis")
-		.duration(1000)
+		.duration(800)
 		.call(yAxis);
 
 	// remove the x-axis so that it redraws ontop of everything

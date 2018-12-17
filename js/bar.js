@@ -70,10 +70,11 @@ function makeBarChart() {
 		.attr('height', height);
 
 	bar_xScale = d3.scaleBand()
-		.range([leftMargin, width - rightMargin]);
+		.range([leftMargin, width - rightMargin])
+		.padding(0.2);
 
 	bar_yScale = d3.scaleLinear()
-		.range([height - bottomMargin, 20]);
+		.range([height - bottomMargin, 10]);
 
 	// AXES
 	bar_xAxis = d3.axisBottom(bar_xScale);
@@ -102,17 +103,15 @@ function makeBarChart() {
 
 	barchart.append("text")
 		.attr("class", "labels")
-		.attr("x", width/2)
+		.attr("x", (width/2)+20)
 		.attr("y", height-10)
 		.style("text-anchor", "middle")
-		.text("States");
+		.text("US States");
 }
 
 function updateBarChart(dataset, color) {
 
 	let bars = barchart.selectAll('rect').data(dataset, key);
-	// ((graph width - rightMargin) / length of  dataset) - padding
-	let barWidth = ((width - rightMargin) / dataset.length) - 8;
 
 	//update axis domains
 	bar_xScale.domain(dataset.map( d => d.state));
@@ -126,7 +125,7 @@ function updateBarChart(dataset, color) {
 		.append('rect')
 		.attr('x', function(d) { return bar_xScale(d.state); })
 		.attr('y', height - bottomMargin)
-		.attr('width', barWidth)
+		.attr('width', bar_xScale.bandwidth())
 		.attr('height', 0)
 		.attr('value', (d) => d.count)
 		.attr('transform', `translate(${5},0)`)

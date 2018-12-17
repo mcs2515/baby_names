@@ -228,6 +228,17 @@ function updateChart(dataset) {
 		.on('mousemove', function (d) {
 
 			d3.select(this).style('cursor', 'pointer');
+			d3.select(this)
+				.transition("radius")
+					.duration(250)
+					.attr('r', 15);
+		})
+		.on('mouseout', function (d) {
+
+			d3.select(this)
+				.transition("radius")
+					.duration(250)
+					.attr('r', 5);
 		})
 		.transition("move")
 		.duration(800)

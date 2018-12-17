@@ -25,12 +25,14 @@ let key = (d) => d.name;
 
 let selectedName;
 let selectedYear;
+let selectedColor;
 let original_dataset;
 
 window.onload = function () {
 
 	// set variables
 	let search = document.querySelector('#search');
+	pageFunction();
 
 	//get the csv and call appropriate functions
 	d3.csv('dataset/StateNames.csv', rowConverter)
@@ -40,6 +42,7 @@ window.onload = function () {
 			//console.log(dataset);
 			autocomplete(d);
 			makeChart(d);
+			makeBarChart();
 			searchBtn(d);
 			deleteNameTag(d);
 		});
@@ -127,8 +130,8 @@ function updateChart(dataset) {
 
 	//update the tag colors
 	let tags = d3.selectAll('.tag')
-		.attr("class", (d,i) => "tag " +  current_colors[i]);
-	
+		.attr("class", (d, i) => "tag " + current_colors[i]);
+
 	/* LINE CHART CODE */
 	// build a D3 line generator
 	let lines = chart.selectAll('.line').data(dataset, key);
@@ -198,7 +201,11 @@ function updateChart(dataset) {
 
 	//changes opacity of dots
 	dots
-		.on("mousemove", d => selectedName = d.name)
+		.on("mousemove", (d, i) => {
+			selectedName = d.name;
+			selectedColor = current_colors[i];
+	})
+		
 		.transition("opacity")
 		.duration(800)
 		.style('opacity', 1);
@@ -216,7 +223,11 @@ function updateChart(dataset) {
 		.on("click", d => {
 			selectedYear = d.year;
 			//function found in bar.js
-			showBarChart(original_dataset, selectedName, selectedYear);
+			showBarChart(original_dataset, selectedName, selectedYear, selectedColor);
+		})
+		.on('mousemove', function (d) {
+
+			d3.select(this).style('cursor', 'pointer');
 		})
 		.transition("move")
 		.duration(800)
@@ -431,7 +442,7 @@ function updateDataset(dataset, adding) {
 	}
 
 	let filtered = filterByYear(subset);
-	
+
 	updateChart(filtered);
 }
 

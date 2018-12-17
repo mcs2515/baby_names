@@ -57,11 +57,9 @@ let states = [
 	'WI',
 	'WY'
 ]
-
+let barKey = (d)=>d.state;
 //Sets up scales, axes, graph demensions, and labels
-function makeBarChart(dataset) {
-
-	console.log(dataset);
+function makeBarChart() {
 
 	width = 900;
 	height = 250;
@@ -72,11 +70,9 @@ function makeBarChart(dataset) {
 		.attr('height', height);
 
 	bar_xScale = d3.scaleBand()
-		.domain(states)
 		.range([leftMargin, width - rightMargin]);
 
 	bar_yScale = d3.scaleLinear()
-		.domain([0, d3.max(dataset, (d) => d.count)])
 		.range([height - bottomMargin, 20]);
 
 	// AXES
@@ -112,66 +108,34 @@ function makeBarChart(dataset) {
 		.text("States");
 }
 
-function updateBarChart(dataset) {
+function updateBarChart(dataset, color) {
 
 	let bars = barchart.selectAll('rect').data(dataset, key);
-
 	// ((graph width - rightMargin) / length of  dataset) - padding
-	//barWidth = ((w - rightMargin) / dataset.length) - 8;
-	barWidth = 30;
+	let barWidth = ((width - rightMargin) / dataset.length) - 8;
 
-	//get lengh of number to get 10^(numlength-1)
-	numpow = Math.pow(10, d3.max(dataset, (d) => d.totalprod).toString().length - 1);
+	//update axis domains
+	bar_xScale.domain(dataset.map( d => d.state));
+	bar_yScale.domain([0, d3.max(dataset, (d) => d.count)]);
+	
+	bar_xAxisGroup.call(bar_xAxis);
+	bar_yAxisGroup.call(bar_yAxis);
 
-	// adding 1 more year to the max & min so last rect doesn't go off x-axis
-	xScale.domain([Number(d3.min(dataset, (d) => d.year)) - 1, Number(d3.max(dataset, (d) => d.year)) + 1]);
-	yScale.domain([0, Math.ceil(d3.max(dataset, (d) => d.totalprod) / numpow) * numpow]);
-	colorScale.domain([0, d3.max(dataset, (d) => d.pesticides)]);
-
-
-	// select rects, rebind with key, use transitions for newly added rects and removed rects
 	bars
 		.enter()
 		.append('rect')
-		.attr('x', (d) => xScale(d.year))
-		.attr('y', h - bottomMargin)
+		.attr('x', function(d) { return bar_xScale(d.state); })
+		.attr('y', height - bottomMargin)
 		.attr('width', barWidth)
 		.attr('height', 0)
-		.attr('transform', `translate(${-barWidth/2},0)`)
-		.attr('value', (d) => d.totalprod)
-		.on('mouseover', function (d) {
-
-			d3.select(this)
-				.transition("fill")
-				.duration(250)
-				.style('fill', '#2f5c33')
-				.style('cursor', 'pointer');
-
-			tooltip
-				.style('left', (d3.event.pageX) + "px")
-				.style('top', (d3.event.pageY) + "px")
-				.text("Pesticides: " + Math.ceil(d.pesticides).toLocaleString() + " (kg)")
-				.transition("tooltip")
-				.duration(200)
-				.style("opacity", .8);
-		})
-		.on('mouseout', function (d) {
-			d3.select(this)
-				.transition("fill")
-				.duration(250)
-				.style('fill', (d) => colorScale(d.pesticides));
-
-			tooltip
-				.transition("tooltip")
-				.duration(500)
-				.style("opacity", 0);
-		})
+		.attr('value', (d) => d.count)
+		.attr('transform', `translate(${5},0)`)
 		.merge(bars)
 		.transition("bars")
-		.duration(1500)
-		.attr('height', (d) => h - bottomMargin - yScale(d.totalprod))
-		.attr('y', (d) => yScale(d.totalprod))
-		.attr('fill', (d) => colorScale(d.pesticides));
+		.duration(1000)
+		.attr('height', (d) => (height - bottomMargin) - bar_yScale(d.count))
+		.attr('y', (d) => bar_yScale(d.count))
+		.attr('fill', `${color}`);
 
 	// change opacity when bars leave
 	bars
@@ -181,22 +145,17 @@ function updateBarChart(dataset) {
 		.style('opacity', 0)
 		.remove();
 
-	// after that, always update xAxis scale, xAxisGroup with xAxis (call), 
-	// and same for yAxis scale and yAxisGroup
-	//xAxis.scale(xScale);
-	xAxisGroup.transition("axis")
+	// after that, always update the axis
+	bar_yAxisGroup.transition("axis")
 		.duration(1000)
-		.call(xAxis);
-
-	//yAxis.scale(yScale);
-	yAxisGroup.transition("axis")
-		.duration(1000)
-		.call(yAxis);
+		.call(bar_yAxis);
 }
 
 function getStateCount(dataset, name, year) {
 	let stateCount = [];
 	let subset = getNamesDataset(dataset);
+	
+	//console.log(subset);
 
 	for (var i = 0; i < subset.length; i++) {
 
@@ -223,13 +182,13 @@ function getStateCount(dataset, name, year) {
 			}
 		}
 	}
-	console.log(stateCount);
+	//console.log(stateCount);
 	return stateCount;
 }
 
-function showBarChart(dataset, name, year){
+function showBarChart(dataset, name, year, color){
 	
 	let stateCount = getStateCount(dataset, name, year);
 	
-	makeBarChart(stateCount);
+	updateBarChart(stateCount, color);
 }
